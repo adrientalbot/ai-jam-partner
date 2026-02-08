@@ -1,0 +1,19 @@
+[project]
+name = "ai-jam-partner"
+version = "0.1.0"
+description = "Experimental AI agent for musical call-and-response using MIDI"
+requires-python = ">=3.9"
+
+dependencies = [
+  "pretty_midi",
+  "numpy",
+  "jupyter",
+  "ipykernel",
+]
+
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["core"]
