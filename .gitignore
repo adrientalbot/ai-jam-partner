@@ -1,41 +1,9 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyd
-*.so
-*.egg-info/
-.eggs/
-.dist/
-build/
-.venv/
-venv/
-ENV/
-.env
-.pytest_cache/
-.mypy_cache/
-.coverage
-.coverage.*
-.pyre/
-.ruff_cache/
-
-# Jupyter
-.ipynb_checkpoints/
-
-# OS
 .DS_Store
-Thumbs.db
-
-# Node / frontend
-node_modules/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# IDE
-.vscode/
-.idea/
-
-# Misc
-*.tmp
+.tmp/
+.venv/
+frontend/node_modules/
+frontend/dist/
+data/output_midi/generated/
+**/__pycache__/
+*.egg-info/
+notebooks/.ipynb_checkpoints/
