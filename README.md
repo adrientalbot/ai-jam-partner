@@ -1,6 +1,6 @@
-# ai-jam-partner
+# We are all John Henry
 
-An experimental MIDI-based call-and-response system for the human / robot / AI music project.
+An experimental MIDI-based call-and-response system for the We are all John Henry project.
 
 ## What this repo is
 
@@ -16,6 +16,9 @@ The first version is intentionally MIDI-only and rule-based. It is designed to v
 ## Project Files
 
 - `[MVP.md](/Users/adrientalbot/Desktop/ai-jam-partner/MVP.md)` short description of the MVP
+- `[core/midi_playground.py](/Users/adrientalbot/Desktop/ai-jam-partner/core/midi_playground.py)` reusable MIDI analysis and response logic
+- `[backend/main.py](/Users/adrientalbot/Desktop/ai-jam-partner/backend/main.py)` FastAPI MIDI API
+- `[frontend/src/main.jsx](/Users/adrientalbot/Desktop/ai-jam-partner/frontend/src/main.jsx)` Vite/React UI
 - `[notebooks/01_mvp_playground.ipynb](/Users/adrientalbot/Desktop/ai-jam-partner/notebooks/01_mvp_playground.ipynb)` notebook demo
 - `[data/input_midi/](/Users/adrientalbot/Desktop/ai-jam-partner/data/input_midi)` sample MIDI inputs
 - `[data/output_midi/](/Users/adrientalbot/Desktop/ai-jam-partner/data/output_midi)` generated MIDI outputs
@@ -35,6 +38,30 @@ If you want to enter the environment manually:
 ```bash
 source .venv/bin/activate
 ```
+
+## Run the App Locally
+
+Open two terminals.
+
+Backend:
+
+```bash
+uv run uvicorn backend.main:app --reload --port 8000
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+- `http://127.0.0.1:5173`
+
+You can upload a `.mid` file or choose one of the bundled samples. The backend writes the response MIDI to `data/output_midi/generated/` and the frontend links to the generated file.
 
 ## Run the Notebook
 
@@ -78,7 +105,4 @@ Helpful notes:
 
 ## Suggested Next Step
 
-Once the notebook prototype feels good, the next step is to split the same logic into:
-
-- a Python backend on `Render`
-- a browser frontend on `Vercel`
+The repo is now split so the musical logic lives in `core/`, the API lives in `backend/`, and the browser UI lives in `frontend/`. That keeps the notebook as a reference without making it the source of truth.

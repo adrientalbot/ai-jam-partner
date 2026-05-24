@@ -1,0 +1,250 @@
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --ink: #111111;
+  --muted: rgba(17, 17, 17, 0.6);
+  --red: #cc1e2a;
+  --line: rgba(17, 17, 17, 0.12);
+  --soft: rgba(204, 30, 42, 0.08);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top right, rgba(204, 30, 42, 0.08), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  color: var(--ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: inherit;
+}
+
+.page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 24px 56px;
+}
+
+.hero {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.38em;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.title {
+  margin: 0;
+  line-height: 0.82;
+  font-size: clamp(3.8rem, 11vw, 9rem);
+  letter-spacing: -0.09em;
+  text-transform: uppercase;
+  max-width: 8ch;
+}
+
+.title__fragment {
+  display: inline-block;
+}
+
+.tone-red {
+  color: var(--red);
+}
+
+.tone-black {
+  color: var(--ink);
+}
+
+.lede {
+  margin: 0;
+  max-width: 56ch;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+}
+
+.panel {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.panel__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.panel__hint {
+  text-align: right;
+}
+
+.panel--form {
+  align-self: start;
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(204, 30, 42, 0.2);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.button,
+.download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--red);
+  background: var(--red);
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+}
+
+.button:disabled {
+  opacity: 0.72;
+  cursor: progress;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.chip {
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(204, 30, 42, 0.18);
+  background: var(--soft);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+}
+
+.summary {
+  display: grid;
+  gap: 18px;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric {
+  min-height: 98px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  border-radius: 6px;
+  border: 1px solid rgba(204, 30, 42, 0.18);
+  background: #fff;
+}
+
+.metric span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+}
+
+.metric strong {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.placeholder {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.error {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(204, 30, 42, 0.24);
+  background: rgba(204, 30, 42, 0.08);
+  color: #8b111a;
+}
+
+.panel--download .download-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .page {
+    padding-inline: 18px;
+  }
+}

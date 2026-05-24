@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from core.midi_playground import find_repo_root, generate_response
+
+ROOT = find_repo_root(Path(__file__).resolve())
+INPUT_DIR = ROOT / "data" / "input_midi"
+OUTPUT_DIR = ROOT / "data" / "output_midi" / "generated"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+app = FastAPI(title="We are all John Henry")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.mount("/generated", StaticFiles(directory=OUTPUT_DIR), name="generated")
+
+
+def safe_filename(name: str) -> str:
+    cleaned = "".join(ch for ch in name if ch.isalnum() or ch in {"-", "_", "."}).strip("._")
+    return cleaned or "response.mid"
+
+
+def list_sample_names() -> list[str]:
+    return [path.name for path in sorted(INPUT_DIR.glob("*.mid"))]
+
+
+def run_generation(input_path: Path, output_name: str):
+    output_path = OUTPUT_DIR / safe_filename(output_name)
+    result = generate_response(input_path, output_path)
+    return {
+        "input_file": result.input_path.name,
+        "output_file": result.output_path.name,
+        "download_url": f"/generated/{result.output_path.name}",
+        "features": result.features,
+        "action": result.action,
+        "source_instrument_name": result.source_instrument_name,
+        "response_instrument_name": result.response_instrument_name,
+        "response_note_count": result.response_note_count,
+        "response_pitch_min": result.response_pitch_min,
+        "response_pitch_max": result.response_pitch_max,
+        "duration_seconds": result.duration_seconds,
+    }
+
+
+@app.get("/")
+def root() -> dict[str, str]:
+    return {
+        "title": "We are all John Henry",
+        "health": "/api/health",
+        "samples": "/api/samples",
+        "generate": "/api/generate",
+    }
+
+
+@app.get("/api/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/api/samples")
+def samples() -> dict[str, list[str]]:
+    return {"samples": list_sample_names()}
+
+
+@app.post("/api/generate")
+async def generate(
+    sample: str = Form(default="mvp_minimalist_input.mid"),
+    output_name: str = Form(default="we_are_all_john_henry_response.mid"),
+    midi_file: UploadFile | None = File(default=None),
+):
+    selected_input: Path
+    temp_path: Path | None = None
+
+    try:
+        if midi_file and midi_file.filename:
+            suffix = Path(midi_file.filename).suffix or ".mid"
+            with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+                temp_file.write(await midi_file.read())
+                temp_path = Path(temp_file.name)
+            selected_input = temp_path
+        else:
+            selected_input = INPUT_DIR / sample
+
+        if not selected_input.exists():
+            raise HTTPException(status_code=404, detail=f"Input MIDI not found: {selected_input.name}")
+
+        return run_generation(selected_input, output_name)
+    finally:
+        if temp_path and temp_path.exists():
+            temp_path.unlink(missing_ok=True)
