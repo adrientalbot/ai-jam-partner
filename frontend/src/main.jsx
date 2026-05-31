@@ -11,8 +11,8 @@ function formatValue(value) {
 
 function App() {
   const [samples, setSamples] = useState([])
-  const [sample, setSample] = useState('mvp_minimalist_input.mid')
-  const [outputName, setOutputName] = useState('we_are_all_john_henry_response.mid')
+  const [sample, setSample] = useState('wrong_ensemble_takeover_seed.mid')
+  const [outputName, setOutputName] = useState('wrong_ensemble_response.mid')
   const [uploadFile, setUploadFile] = useState(null)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
@@ -34,9 +34,8 @@ function App() {
 
   const titleFragments = useMemo(
     () => [
-      { text: 'We are all', tone: 'black' },
-      { text: 'John', tone: 'red' },
-      { text: 'Henry', tone: 'black' },
+      { text: 'Wrong', tone: 'black' },
+      { text: 'Ensemble', tone: 'red' },
     ],
     []
   )
@@ -76,8 +75,8 @@ function App() {
   return (
     <main className="page">
       <section className="hero">
-        <div className="eyebrow">We are all John Henry</div>
-        <h1 className="title" aria-label="We are all John Henry">
+        <div className="eyebrow">Wrong Ensemble</div>
+        <h1 className="title" aria-label="Wrong Ensemble">
           {titleFragments.map((fragment, index) => (
             <span key={fragment.text} className={`title__fragment tone-${fragment.tone}`}>
               {fragment.text}
@@ -86,9 +85,10 @@ function App() {
           ))}
         </h1>
         <p className="lede">
-          Upload a MIDI file or choose a sample, then generate a reactive response.
-          The design keeps the typography quiet and the color system close to the
-          PDF: white space, black text, and sharp red accents.
+          Upload a MIDI file or choose a sample, then generate a reactive response
+          for the cello, trombone, drum set, percussion, and robot counterpart
+          ensemble. The design keeps the typography quiet and the color system
+          close to the score: white space, black text, and sharp red accents.
         </p>
       </section>
 
@@ -108,7 +108,7 @@ function App() {
             <span>Choose sample</span>
             <select value={sample} onChange={(event) => setSample(event.target.value)}>
               {samples.length === 0 ? (
-                <option value="mvp_minimalist_input.mid">mvp_minimalist_input.mid</option>
+                <option value="wrong_ensemble_takeover_seed.mid">wrong_ensemble_takeover_seed.mid</option>
               ) : (
                 samples.map((name) => (
                   <option key={name} value={name}>

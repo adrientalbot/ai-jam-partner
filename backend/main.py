@@ -14,7 +14,7 @@ INPUT_DIR = ROOT / "data" / "input_midi"
 OUTPUT_DIR = ROOT / "data" / "output_midi" / "generated"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-app = FastAPI(title="We are all John Henry")
+app = FastAPI(title="Wrong Ensemble")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,7 +55,7 @@ def run_generation(input_path: Path, output_name: str):
 @app.get("/")
 def root() -> dict[str, str]:
     return {
-        "title": "We are all John Henry",
+        "title": "Wrong Ensemble",
         "health": "/api/health",
         "samples": "/api/samples",
         "generate": "/api/generate",
@@ -74,8 +74,8 @@ def samples() -> dict[str, list[str]]:
 
 @app.post("/api/generate")
 async def generate(
-    sample: str = Form(default="mvp_minimalist_input.mid"),
-    output_name: str = Form(default="we_are_all_john_henry_response.mid"),
+    sample: str = Form(default="wrong_ensemble_takeover_seed.mid"),
+    output_name: str = Form(default="wrong_ensemble_response.mid"),
     midi_file: UploadFile | None = File(default=None),
 ):
     selected_input: Path
