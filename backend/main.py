@@ -17,7 +17,7 @@ INPUT_DIR = ROOT / "data" / "input_midi"
 OUTPUT_DIR = ROOT / "data" / "output_midi" / "generated"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-app = FastAPI(title="Wrong Ensemble")
+app = FastAPI(title="We Are All John Henry")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -58,7 +58,7 @@ def run_generation(input_path: Path, output_name: str):
 @app.get("/")
 def root() -> dict[str, str]:
     return {
-        "title": "Wrong Ensemble",
+        "title": "We Are All John Henry",
         "health": "/api/health",
         "samples": "/api/samples",
         "generate": "/api/generate",
