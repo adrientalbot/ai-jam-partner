@@ -11,7 +11,7 @@ function formatValue(value) {
 
 function App() {
   const [samples, setSamples] = useState([])
-  const [sample, setSample] = useState('mvp_minimalist_input.mid')
+  const [sample, setSample] = useState('wrong_ensemble_ensemble_seed.mid')
   const [outputName, setOutputName] = useState('wrong_ensemble_response.mid')
   const [uploadFile, setUploadFile] = useState(null)
   const [result, setResult] = useState(null)
@@ -34,8 +34,8 @@ function App() {
 
   const titleFragments = useMemo(
     () => [
-      { text: 'Wrong', tone: 'black' },
-      { text: 'Ensemble', tone: 'red' },
+      { text: 'We Are All', tone: 'black' },
+      { text: 'John Henry', tone: 'red' },
     ],
     []
   )
@@ -59,9 +59,21 @@ function App() {
         body: formData,
       })
 
-      const data = await response.json()
+      const responseText = await response.text()
+      let data = null
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText)
+        } catch {
+          data = { detail: responseText }
+        }
+      }
       if (!response.ok) {
-        throw new Error(data.detail || 'Generation failed')
+        throw new Error(data?.detail || responseText || 'Generation failed')
+      }
+
+      if (!data) {
+        throw new Error('Empty response from server')
       }
 
       setResult(data)
@@ -75,8 +87,8 @@ function App() {
   return (
     <main className="page">
       <section className="hero">
-        <div className="eyebrow">Wrong Ensemble</div>
-        <h1 className="title" aria-label="Wrong Ensemble">
+        <div className="eyebrow">We Are All John Henry</div>
+        <h1 className="title" aria-label="We Are All John Henry">
           {titleFragments.map((fragment, index) => (
             <span key={fragment.text} className={`title__fragment tone-${fragment.tone}`}>
               {fragment.text}
@@ -87,7 +99,7 @@ function App() {
         <p className="lede">
           Upload a MIDI file or choose a sample, then generate a reactive response
           for the cello, trombone, drum set, percussion, and robot counterpart
-          framework. The design keeps the typography quiet and the color system
+          ensemble. The design keeps the typography quiet and the color system
           close to the score: white space, black text, and sharp red accents.
         </p>
       </section>
@@ -108,7 +120,7 @@ function App() {
             <span>Choose sample</span>
             <select value={sample} onChange={(event) => setSample(event.target.value)}>
               {samples.length === 0 ? (
-                <option value="mvp_minimalist_input.mid">mvp_minimalist_input.mid</option>
+                <option value="wrong_ensemble_ensemble_seed.mid">wrong_ensemble_ensemble_seed.mid</option>
               ) : (
                 samples.map((name) => (
                   <option key={name} value={name}>

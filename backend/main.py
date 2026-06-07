@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+import logging
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,12 +10,14 @@ from fastapi.staticfiles import StaticFiles
 
 from core.midi_playground import find_repo_root, generate_response
 
+logger = logging.getLogger(__name__)
+
 ROOT = find_repo_root(Path(__file__).resolve())
 INPUT_DIR = ROOT / "data" / "input_midi"
 OUTPUT_DIR = ROOT / "data" / "output_midi" / "generated"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-app = FastAPI(title="Wrong Ensemble")
+app = FastAPI(title="We Are All John Henry")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,7 +58,7 @@ def run_generation(input_path: Path, output_name: str):
 @app.get("/")
 def root() -> dict[str, str]:
     return {
-        "title": "Wrong Ensemble",
+        "title": "We Are All John Henry",
         "health": "/api/health",
         "samples": "/api/samples",
         "generate": "/api/generate",
@@ -74,7 +77,7 @@ def samples() -> dict[str, list[str]]:
 
 @app.post("/api/generate")
 async def generate(
-    sample: str = Form(default="mvp_minimalist_input.mid"),
+    sample: str = Form(default="wrong_ensemble_ensemble_seed.mid"),
     output_name: str = Form(default="wrong_ensemble_response.mid"),
     midi_file: UploadFile | None = File(default=None),
 ):
@@ -95,6 +98,11 @@ async def generate(
             raise HTTPException(status_code=404, detail=f"Input MIDI not found: {selected_input.name}")
 
         return run_generation(selected_input, output_name)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Generation failed for %s", selected_input if 'selected_input' in locals() else sample)
+        raise HTTPException(status_code=500, detail=f"Generation failed: {exc}") from exc
     finally:
         if temp_path and temp_path.exists():
             temp_path.unlink(missing_ok=True)

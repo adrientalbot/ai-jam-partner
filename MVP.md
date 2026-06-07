@@ -1,6 +1,6 @@
 # MVP
 
-The MVP is a MIDI-first call-and-response prototype for the Wrong Ensemble project.
+The MVP is a MIDI-first call-and-response prototype for the We Are All John Henry project.
 
 ## Goal
 

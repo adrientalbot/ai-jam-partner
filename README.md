@@ -1,6 +1,6 @@
-# Wrong Ensemble
+# We Are All John Henry
 
-An experimental MIDI-based call-and-response system for the Wrong Ensemble project.
+An experimental MIDI-based call-and-response system for the We Are All John Henry project.
 
 ## What this repo is
 
@@ -17,7 +17,7 @@ The first version is intentionally MIDI-only and rule-based. It is designed to v
 
 The work is repetitive, physically demanding, and intended to oscillate between control, loss of control, and machine takeover.
 
-The performing forces are the Wrong Ensemble, a hybrid ensemble of:
+The performing forces are We Are All John Henry, a hybrid ensemble of:
 
 - four professional musicians: cello, trombone, drum set, percussion
 - four music robots with the same instrumentation
