@@ -82,17 +82,17 @@ def quantize(value: float, step: float) -> float:
     return round(value / step) * step
 
 
-def load_midi(path: Path) -> tuple[pretty_midi.PrettyMIDI, pretty_midi.Instrument, list[pretty_midi.Note]]:
+def load_midi(path: Path) -> tuple[pretty_midi.PrettyMIDI, list[pretty_midi.Instrument], list[pretty_midi.Note]]:
     midi = pretty_midi.PrettyMIDI(str(path))
     if not midi.instruments:
         raise ValueError("Input MIDI contains no instruments")
 
-    instrument = midi.instruments[0]
-    notes = sorted(instrument.notes, key=lambda note: note.start)
+    instruments = midi.instruments
+    notes = sorted((note for instrument in instruments for note in instrument.notes), key=lambda note: note.start)
     if not notes:
-        raise ValueError("Input MIDI contains no notes in the first instrument")
+        raise ValueError("Input MIDI contains no notes in any instrument")
 
-    return midi, instrument, notes
+    return midi, instruments, notes
 
 
 def extract_features(
@@ -470,13 +470,13 @@ def generate_response(
     time_sig: tuple[int, int] = DEFAULT_TIME_SIG,
 ) -> PlaybackResult:
     np.random.seed(DEFAULT_SEED)
-    midi, instrument, notes = load_midi(input_path)
+    midi, instruments, notes = load_midi(input_path)
     features = extract_features(notes, tempo=tempo, time_sig=time_sig)
     action = decide_action(features)
     response_midi = build_response(
         notes,
         action,
-        source_instrument=instrument,
+        source_instrument=instruments[0],
         features=features,
         tempo=tempo,
         time_sig=time_sig,
@@ -496,7 +496,7 @@ def generate_response(
         output_path=output_path,
         features=features,
         action=action,
-        source_instrument_name=pretty_midi.program_to_instrument_name(instrument.program),
+        source_instrument_name="ensemble seed" if len(instruments) > 1 else pretty_midi.program_to_instrument_name(instruments[0].program),
         response_instrument_name="multi-instrument ensemble",
         response_note_count=len(response_notes),
         response_pitch_min=min(note.pitch for note in response_notes),
