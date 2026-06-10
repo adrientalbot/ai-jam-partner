@@ -2,6 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+
+function apiUrl(path) {
+  return API_BASE_URL ? `${API_BASE_URL}${path}` : path
+}
+
 function formatValue(value) {
   if (typeof value === 'number') {
     return Number.isInteger(value) ? String(value) : value.toFixed(2)
@@ -19,7 +25,7 @@ function App() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch('/api/samples')
+    fetch(apiUrl('/api/samples'))
       .then((response) => response.json())
       .then((data) => {
         setSamples(data.samples || [])
@@ -54,7 +60,7 @@ function App() {
         formData.append('midi_file', uploadFile)
       }
 
-      const response = await fetch('/api/generate', {
+      const response = await fetch(apiUrl('/api/generate'), {
         method: 'POST',
         body: formData,
       })
@@ -214,7 +220,7 @@ function App() {
                 <span className="panel__hint">Generated MIDI is ready</span>
               </div>
               <div className="download-row">
-                <a className="download" href={result.download_url}>
+                <a className="download" href={apiUrl(result.download_url)}>
                   Download MIDI
                 </a>
                 <span className="muted">{result.output_file}</span>

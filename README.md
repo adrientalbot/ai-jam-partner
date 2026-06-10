@@ -72,6 +72,16 @@ Open:
 
 You can upload a `.mid` file or choose one of the bundled samples. The backend writes the response MIDI to `data/output_midi/generated/` and the frontend links to the generated file.
 
+## Deployment Note
+
+If the frontend is deployed separately from the backend, set `VITE_API_BASE_URL` in the frontend deployment to the Render backend origin, for example:
+
+```bash
+https://your-render-service.onrender.com
+```
+
+The frontend will call `${VITE_API_BASE_URL}/api/...` in production and keep using same-origin `/api/...` requests during local development.
+
 ## Run the Notebook
 
 Start Jupyter:
