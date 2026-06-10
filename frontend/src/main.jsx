@@ -199,15 +199,20 @@ function App() {
         </p>
         {result ? (
           <div className="hero-actions" aria-label="Download generated and input MIDI">
-            <a className="download download--primary" href={apiUrl(result.download_url)}>
-              Download MIDI
-            </a>
-            {inputDownloadUrl ? (
-              <a className="download download--secondary" href={inputDownloadUrl} download={inputDownloadName}>
-                Download input
+            <div className="hero-actions__meta">
+              <span className="hero-actions__label">Main result</span>
+              <span className="hero-actions__value">{result.output_file}</span>
+            </div>
+            <div className="hero-actions__buttons">
+              <a className="download download--primary" href={apiUrl(result.download_url)}>
+                Download response
               </a>
-            ) : null}
-            <span className="hero-actions__meta">{result.output_file}</span>
+              {inputDownloadUrl ? (
+                <a className="download download--secondary" href={inputDownloadUrl} download={inputDownloadName}>
+                  Download input
+                </a>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </section>
