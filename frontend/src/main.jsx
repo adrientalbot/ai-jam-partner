@@ -3,6 +3,54 @@ import { createRoot } from 'react-dom/client'
 import './styles.css'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+const DEFAULT_SAMPLE_FILE = 'wrong_ensemble_ensemble_seed.mid'
+const DEFAULT_SAMPLES = [
+  {
+    file: 'wrong_ensemble_ensemble_seed.mid',
+    name: 'Wrong Ensemble Seed',
+    description: 'A compact ensemble opening with a deliberately mismatched texture.',
+  },
+  {
+    file: 'wrong_ensemble_takeover_seed.mid',
+    name: 'Wrong Ensemble Takeover',
+    description: 'A more aggressive cue built around a takeover-style gesture.',
+  },
+  {
+    file: 'mvp_minimalist_input.mid',
+    name: 'Minimalist MVP',
+    description: 'Sparse material with lots of space and clear rhythmic cells.',
+  },
+  {
+    file: 'mvp_minimalist_input_variant.mid',
+    name: 'Minimalist Variant',
+    description: 'Alternate cut of the minimalist MVP with denser phrasing.',
+  },
+  {
+    file: 'in_c_inspired_input.mid',
+    name: 'In C Inspired',
+    description: 'Repetitive modular patterns with a steady forward pulse.',
+  },
+  {
+    file: 'in_c_inspired_input_variant.mid',
+    name: 'In C Variant',
+    description: 'A variation with slightly different harmonic movement and pacing.',
+  },
+  {
+    file: 'max_piano.mid',
+    name: 'Max Piano',
+    description: 'Piano-forward material with broader gestures and register jumps.',
+  },
+  {
+    file: 'mvp_test_input.mid',
+    name: 'MVP Test Input',
+    description: 'Short test fixture for verifying the generation pipeline.',
+  },
+  {
+    file: 'example_01.mid',
+    name: 'Example 01',
+    description: 'General-purpose example clip for quick experimentation.',
+  },
+]
 
 function apiUrl(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path
@@ -15,11 +63,29 @@ function formatValue(value) {
   return String(value)
 }
 
+function normalizeSample(sample) {
+  if (typeof sample === 'string') {
+    const base = sample.replace(/\.mid$/i, '')
+    const pretty = base
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\w/g, (letter) => letter.toUpperCase())
+
+    return {
+      file: sample,
+      name: pretty,
+      description: 'Sample input MIDI file.',
+    }
+  }
+
+  return sample
+}
+
 function App() {
-  const [samples, setSamples] = useState([])
-  const [sample, setSample] = useState('wrong_ensemble_ensemble_seed.mid')
+  const [samples, setSamples] = useState(DEFAULT_SAMPLES)
+  const [sample, setSample] = useState(DEFAULT_SAMPLE_FILE)
   const [outputName, setOutputName] = useState('wrong_ensemble_response.mid')
   const [uploadFile, setUploadFile] = useState(null)
+  const [uploadDownloadUrl, setUploadDownloadUrl] = useState('')
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -28,15 +94,30 @@ function App() {
     fetch(apiUrl('/api/samples'))
       .then((response) => response.json())
       .then((data) => {
-        setSamples(data.samples || [])
-        if ((data.samples || []).length > 0 && !data.samples.includes(sample)) {
-          setSample(data.samples[0])
+        const nextSamples = (data.samples || []).map(normalizeSample)
+        if (nextSamples.length > 0) {
+          setSamples(nextSamples)
+          setSample((currentSample) =>
+            nextSamples.some((item) => item.file === currentSample) ? currentSample : nextSamples[0].file
+          )
         }
       })
       .catch(() => {
-        setSamples([])
+        setSamples(DEFAULT_SAMPLES)
       })
   }, [])
+
+  useEffect(() => {
+    if (!uploadFile) {
+      setUploadDownloadUrl('')
+      return undefined
+    }
+
+    const objectUrl = URL.createObjectURL(uploadFile)
+    setUploadDownloadUrl(objectUrl)
+
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [uploadFile])
 
   const titleFragments = useMemo(
     () => [
@@ -45,6 +126,14 @@ function App() {
     ],
     []
   )
+
+  const selectedSample = useMemo(
+    () => samples.find((item) => item.file === sample) ?? samples[0] ?? null,
+    [sample, samples]
+  )
+
+  const inputDownloadUrl = uploadDownloadUrl || (selectedSample ? apiUrl(`/inputs/${selectedSample.file}`) : '')
+  const inputDownloadName = uploadFile?.name || selectedSample?.file || 'input.mid'
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -108,6 +197,19 @@ function App() {
           ensemble. The design keeps the typography quiet and the color system
           close to the score: white space, black text, and sharp red accents.
         </p>
+        {result ? (
+          <div className="hero-actions" aria-label="Download generated and input MIDI">
+            <a className="download download--primary" href={apiUrl(result.download_url)}>
+              Download MIDI
+            </a>
+            {inputDownloadUrl ? (
+              <a className="download download--secondary" href={inputDownloadUrl} download={inputDownloadName}>
+                Download input
+              </a>
+            ) : null}
+            <span className="hero-actions__meta">{result.output_file}</span>
+          </div>
+        ) : null}
       </section>
 
       <section className="layout">
@@ -119,23 +221,34 @@ function App() {
 
           <label className="field">
             <span>Upload MIDI</span>
-            <input type="file" accept=".mid,.midi,audio/midi" onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)} />
+            <input
+              type="file"
+              accept=".mid,.midi,audio/midi"
+              onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)}
+            />
           </label>
 
-          <label className="field">
+          <div className="field">
             <span>Choose sample</span>
-            <select value={sample} onChange={(event) => setSample(event.target.value)}>
-              {samples.length === 0 ? (
-                <option value="wrong_ensemble_ensemble_seed.mid">wrong_ensemble_ensemble_seed.mid</option>
-              ) : (
-                samples.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))
-              )}
-            </select>
-          </label>
+            <div className="sample-grid" role="radiogroup" aria-label="Input sample library">
+              {samples.map((item) => (
+                <label key={item.file} className={`sample-card${sample === item.file ? ' sample-card--selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sample"
+                    value={item.file}
+                    checked={sample === item.file}
+                    onChange={(event) => setSample(event.target.value)}
+                  />
+                  <div className="sample-card__body">
+                    <strong>{item.name}</strong>
+                    <span>{item.description}</span>
+                    <small>{item.file}</small>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
 
           <label className="field">
             <span>Output file name</span>
@@ -214,16 +327,24 @@ function App() {
           </div>
 
           {result ? (
-            <div className="panel panel--download">
+            <div className="panel">
               <div className="panel__head">
                 <span>Output</span>
                 <span className="panel__hint">Generated MIDI is ready</span>
               </div>
-              <div className="download-row">
-                <a className="download" href={apiUrl(result.download_url)}>
-                  Download MIDI
-                </a>
-                <span className="muted">{result.output_file}</span>
+              <div className="output-meta">
+                <div>
+                  <span className="output-meta__label">Generated file</span>
+                  <strong>{result.output_file}</strong>
+                </div>
+                <div>
+                  <span className="output-meta__label">Input source</span>
+                  <strong>{result.input_file}</strong>
+                </div>
+                <div>
+                  <span className="output-meta__label">Duration</span>
+                  <strong>{formatValue(result.duration_seconds)} sec</strong>
+                </div>
               </div>
             </div>
           ) : null}
