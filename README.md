@@ -113,7 +113,36 @@ Helpful notes:
 - the first track is treated as the input source by default
 - the notebook expects at least one instrument track
 - the output MIDI can be imported into a DAW or MIDI player
-- if your source file has a piano timbre, the response currently keeps the same instrument program for consistency
+
+## What The Input MIDI Should Look Like
+
+The input MIDI should be short, repetitive, and easy to read musically.
+
+Good source material has:
+
+- four distinct parts that match the ensemble:
+  - cello
+  - trombone
+  - drum set
+  - percussion
+- a clear pulse or repeating cell
+- a strong sense of physical repetition
+- enough variation in rhythm and register for the system to detect tension
+- room for escalation, fragmentation, and machine takeover
+- a structure that feels performative even when looped
+
+In practice, the best input MIDI has a steady pulse, a repeated motif, and some gradual change over time.
+
+## Notes On The Bundled Samples
+
+The bundled samples are good for testing, but they are not finished performance parts.
+
+- the response engine currently flattens the source notes for analysis, so the percussion layers can dominate the feature extraction
+- the file is more rhythm-heavy than pitch-balanced, which can push the detector toward low-register behavior
+- the melodic identity is still a bit rough in places
+- the samples are meant for prototyping, not final playback
+
+For the best results, use samples with clear pitch content and keep the drum parts supportive rather than dominant.
 
 ## What the MVP Does
 

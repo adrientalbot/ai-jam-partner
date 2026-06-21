@@ -26,6 +26,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.mount("/generated", StaticFiles(directory=OUTPUT_DIR), name="generated")
+app.mount("/inputs", StaticFiles(directory=INPUT_DIR), name="inputs")
+
+SAMPLE_LIBRARY: list[dict[str, str | int]] = [
+    {
+        "file": "wrong_ensemble_ensemble_seed.mid",
+        "name": "Wrong Ensemble Seed",
+        "description": "A compact ensemble opening with a deliberately mismatched texture.",
+        "instrument_count": 4,
+    },
+    {
+        "file": "wrong_ensemble_chamber_seed.mid",
+        "name": "Wrong Ensemble Chamber",
+        "description": "A leaner ensemble variant with the same call-and-response character.",
+        "instrument_count": 4,
+    },
+    {
+        "file": "wrong_ensemble_takeover_seed.mid",
+        "name": "Wrong Ensemble Takeover",
+        "description": "Single-line material with a more overt takeover-style contour.",
+        "instrument_count": 1,
+    },
+]
 
 
 def safe_filename(name: str) -> str:
@@ -33,8 +55,8 @@ def safe_filename(name: str) -> str:
     return cleaned or "response.mid"
 
 
-def list_sample_names() -> list[str]:
-    return [path.name for path in sorted(INPUT_DIR.glob("*.mid"))]
+def list_samples() -> list[dict[str, str | int]]:
+    return [sample for sample in SAMPLE_LIBRARY if (INPUT_DIR / sample["file"]).exists()]
 
 
 def run_generation(input_path: Path, output_name: str):
@@ -71,8 +93,8 @@ def health() -> dict[str, str]:
 
 
 @app.get("/api/samples")
-def samples() -> dict[str, list[str]]:
-    return {"samples": list_sample_names()}
+def samples() -> dict[str, list[dict[str, str]]]:
+    return {"samples": list_samples()}
 
 
 @app.post("/api/generate")

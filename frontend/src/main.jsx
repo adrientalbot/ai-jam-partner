@@ -3,6 +3,27 @@ import { createRoot } from 'react-dom/client'
 import './styles.css'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+const DEFAULT_SAMPLE_FILE = 'wrong_ensemble_ensemble_seed.mid'
+const DEFAULT_SAMPLES = [
+  {
+    file: 'wrong_ensemble_ensemble_seed.mid',
+    name: 'Wrong Ensemble Seed',
+    description: 'A compact ensemble opening with a deliberately mismatched texture.',
+    instrument_count: 4,
+  },
+  {
+    file: 'wrong_ensemble_chamber_seed.mid',
+    name: 'Wrong Ensemble Chamber',
+    description: 'A leaner ensemble variant with the same call-and-response character.',
+    instrument_count: 4,
+  },
+  {
+    file: 'wrong_ensemble_takeover_seed.mid',
+    name: 'Wrong Ensemble Takeover',
+    description: 'Single-line material with a more overt takeover-style contour.',
+    instrument_count: 1,
+  },
+]
 
 function apiUrl(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path
@@ -15,11 +36,30 @@ function formatValue(value) {
   return String(value)
 }
 
+function normalizeSample(sample) {
+  if (typeof sample === 'string') {
+    const base = sample.replace(/\.mid$/i, '')
+    const pretty = base
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\w/g, (letter) => letter.toUpperCase())
+
+    return {
+      file: sample,
+      name: pretty,
+      description: 'Sample input MIDI file.',
+      instrument_count: 1,
+    }
+  }
+
+  return sample
+}
+
 function App() {
-  const [samples, setSamples] = useState([])
-  const [sample, setSample] = useState('wrong_ensemble_ensemble_seed.mid')
+  const [samples, setSamples] = useState(DEFAULT_SAMPLES)
+  const [sample, setSample] = useState(DEFAULT_SAMPLE_FILE)
   const [outputName, setOutputName] = useState('wrong_ensemble_response.mid')
   const [uploadFile, setUploadFile] = useState(null)
+  const [uploadDownloadUrl, setUploadDownloadUrl] = useState('')
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -28,23 +68,38 @@ function App() {
     fetch(apiUrl('/api/samples'))
       .then((response) => response.json())
       .then((data) => {
-        setSamples(data.samples || [])
-        if ((data.samples || []).length > 0 && !data.samples.includes(sample)) {
-          setSample(data.samples[0])
+        const nextSamples = (data.samples || []).map(normalizeSample)
+        if (nextSamples.length > 0) {
+          setSamples(nextSamples)
+          setSample((currentSample) =>
+            nextSamples.some((item) => item.file === currentSample) ? currentSample : nextSamples[0].file
+          )
         }
       })
       .catch(() => {
-        setSamples([])
+        setSamples(DEFAULT_SAMPLES)
       })
   }, [])
 
-  const titleFragments = useMemo(
-    () => [
-      { text: 'We Are All', tone: 'black' },
-      { text: 'John Henry', tone: 'red' },
-    ],
-    []
+  useEffect(() => {
+    if (!uploadFile) {
+      setUploadDownloadUrl('')
+      return undefined
+    }
+
+    const objectUrl = URL.createObjectURL(uploadFile)
+    setUploadDownloadUrl(objectUrl)
+
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [uploadFile])
+
+  const selectedSample = useMemo(
+    () => samples.find((item) => item.file === sample) ?? samples[0] ?? null,
+    [sample, samples]
   )
+
+  const inputDownloadUrl = uploadDownloadUrl || (selectedSample ? apiUrl(`/inputs/${selectedSample.file}`) : '')
+  const inputDownloadName = uploadFile?.name || selectedSample?.file || 'input.mid'
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -95,47 +150,90 @@ function App() {
       <section className="hero">
         <div className="eyebrow">We Are All John Henry</div>
         <h1 className="title" aria-label="We Are All John Henry">
-          {titleFragments.map((fragment, index) => (
-            <span key={fragment.text} className={`title__fragment tone-${fragment.tone}`}>
-              {fragment.text}
-              {index < titleFragments.length - 1 ? <br /> : null}
-            </span>
-          ))}
+          <span className="title__line tone-black">We Are All</span>
+          <span className="title__line tone-red">John Henry</span>
         </h1>
         <p className="lede">
-          Upload a MIDI file or choose a sample, then generate a reactive response
-          for the cello, trombone, drum set, percussion, and robot counterpart
-          ensemble. The design keeps the typography quiet and the color system
-          close to the score: white space, black text, and sharp red accents.
+          Upload a MIDI file or choose a sample, then generate a reactive response.
         </p>
+        {result ? (
+          <div className="hero-actions" aria-label="Download generated and input MIDI">
+            <div className="hero-actions__meta">
+              <span className="hero-actions__label">Main result</span>
+              <span className="hero-actions__value">{result.output_file}</span>
+            </div>
+            <div className="hero-actions__buttons">
+              <a className="download download--primary" href={apiUrl(result.download_url)}>
+                Download response
+              </a>
+              {inputDownloadUrl ? (
+                <a className="download download--secondary" href={inputDownloadUrl} download={inputDownloadName}>
+                  Download input
+                </a>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="layout">
         <form className="panel panel--form" onSubmit={handleSubmit}>
           <div className="panel__head">
             <span>Input</span>
-            <span className="panel__hint">MIDI in, MIDI out</span>
+            <span className="panel__hint">Choose a sample or upload your own</span>
+          </div>
+
+          <div className="form-steps" aria-label="How to use this form">
+            <div className="form-step">
+              <span className="form-step__num">1</span>
+              <span className="form-step__text">Pick a sample or upload a MIDI file.</span>
+            </div>
+            <div className="form-step">
+              <span className="form-step__num">2</span>
+              <span className="form-step__text">Set the output file name if you want.</span>
+            </div>
+            <div className="form-step">
+              <span className="form-step__num">3</span>
+              <span className="form-step__text">Generate the response and download both files.</span>
+            </div>
           </div>
 
           <label className="field">
             <span>Upload MIDI</span>
-            <input type="file" accept=".mid,.midi,audio/midi" onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)} />
+            <small className="field__help">Optional. Uploaded files override the selected sample.</small>
+            <input
+              type="file"
+              accept=".mid,.midi,audio/midi"
+              onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)}
+            />
           </label>
 
-          <label className="field">
+          <div className="field">
             <span>Choose sample</span>
-            <select value={sample} onChange={(event) => setSample(event.target.value)}>
-              {samples.length === 0 ? (
-                <option value="wrong_ensemble_ensemble_seed.mid">wrong_ensemble_ensemble_seed.mid</option>
-              ) : (
-                samples.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))
-              )}
-            </select>
-          </label>
+            <div className="sample-grid" role="radiogroup" aria-label="Input sample library">
+              {samples.map((item) => (
+                <label key={item.file} className={`sample-card${sample === item.file ? ' sample-card--selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sample"
+                    value={item.file}
+                    checked={sample === item.file}
+                    onChange={(event) => setSample(event.target.value)}
+                  />
+                  <div className="sample-card__body">
+                    <div className="sample-card__title-row">
+                      <strong>{item.name}</strong>
+                      <span className="sample-card__count">
+                        {item.instrument_count === 1 ? 'Single' : `${item.instrument_count} parts`}
+                      </span>
+                    </div>
+                    <span>{item.description}</span>
+                    <small>{item.file}</small>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
 
           <label className="field">
             <span>Output file name</span>
@@ -150,14 +248,10 @@ function App() {
             {loading ? 'Generating...' : 'Generate response'}
           </button>
 
-          <div className="chips">
-            <span className="chip">fastapi</span>
-            <span className="chip">vite</span>
-            <span className="chip">react</span>
-          </div>
         </form>
 
         <section className="summary">
+          {result ? <div className="summary__lead">Generated MIDI is ready.</div> : null}
           {error ? <div className="error">{error}</div> : null}
 
           <div className="panel">
@@ -214,16 +308,24 @@ function App() {
           </div>
 
           {result ? (
-            <div className="panel panel--download">
+            <div className="panel">
               <div className="panel__head">
                 <span>Output</span>
-                <span className="panel__hint">Generated MIDI is ready</span>
+                <span className="panel__hint">{result.output_file}</span>
               </div>
-              <div className="download-row">
-                <a className="download" href={apiUrl(result.download_url)}>
-                  Download MIDI
-                </a>
-                <span className="muted">{result.output_file}</span>
+              <div className="output-meta">
+                <div>
+                  <span className="output-meta__label">Generated file</span>
+                  <strong>{result.output_file}</strong>
+                </div>
+                <div>
+                  <span className="output-meta__label">Input source</span>
+                  <strong>{result.input_file}</strong>
+                </div>
+                <div>
+                  <span className="output-meta__label">Duration</span>
+                  <strong>{formatValue(result.duration_seconds)} sec</strong>
+                </div>
               </div>
             </div>
           ) : null}
