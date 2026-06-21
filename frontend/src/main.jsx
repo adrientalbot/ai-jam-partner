@@ -9,46 +9,19 @@ const DEFAULT_SAMPLES = [
     file: 'wrong_ensemble_ensemble_seed.mid',
     name: 'Wrong Ensemble Seed',
     description: 'A compact ensemble opening with a deliberately mismatched texture.',
+    instrument_count: 4,
+  },
+  {
+    file: 'wrong_ensemble_chamber_seed.mid',
+    name: 'Wrong Ensemble Chamber',
+    description: 'A leaner ensemble variant with the same call-and-response character.',
+    instrument_count: 4,
   },
   {
     file: 'wrong_ensemble_takeover_seed.mid',
     name: 'Wrong Ensemble Takeover',
-    description: 'A more aggressive cue built around a takeover-style gesture.',
-  },
-  {
-    file: 'mvp_minimalist_input.mid',
-    name: 'Minimalist MVP',
-    description: 'Sparse material with lots of space and clear rhythmic cells.',
-  },
-  {
-    file: 'mvp_minimalist_input_variant.mid',
-    name: 'Minimalist Variant',
-    description: 'Alternate cut of the minimalist MVP with denser phrasing.',
-  },
-  {
-    file: 'in_c_inspired_input.mid',
-    name: 'In C Inspired',
-    description: 'Repetitive modular patterns with a steady forward pulse.',
-  },
-  {
-    file: 'in_c_inspired_input_variant.mid',
-    name: 'In C Variant',
-    description: 'A variation with slightly different harmonic movement and pacing.',
-  },
-  {
-    file: 'max_piano.mid',
-    name: 'Max Piano',
-    description: 'Piano-forward material with broader gestures and register jumps.',
-  },
-  {
-    file: 'mvp_test_input.mid',
-    name: 'MVP Test Input',
-    description: 'Short test fixture for verifying the generation pipeline.',
-  },
-  {
-    file: 'example_01.mid',
-    name: 'Example 01',
-    description: 'General-purpose example clip for quick experimentation.',
+    description: 'Single-line material with a more overt takeover-style contour.',
+    instrument_count: 1,
   },
 ]
 
@@ -74,6 +47,7 @@ function normalizeSample(sample) {
       file: sample,
       name: pretty,
       description: 'Sample input MIDI file.',
+      instrument_count: 1,
     }
   }
 
@@ -118,14 +92,6 @@ function App() {
 
     return () => URL.revokeObjectURL(objectUrl)
   }, [uploadFile])
-
-  const titleFragments = useMemo(
-    () => [
-      { text: 'We Are All', tone: 'black' },
-      { text: 'John Henry', tone: 'red' },
-    ],
-    []
-  )
 
   const selectedSample = useMemo(
     () => samples.find((item) => item.file === sample) ?? samples[0] ?? null,
@@ -184,18 +150,11 @@ function App() {
       <section className="hero">
         <div className="eyebrow">We Are All John Henry</div>
         <h1 className="title" aria-label="We Are All John Henry">
-          {titleFragments.map((fragment, index) => (
-            <span key={fragment.text} className={`title__fragment tone-${fragment.tone}`}>
-              {fragment.text}
-              {index < titleFragments.length - 1 ? <br /> : null}
-            </span>
-          ))}
+          <span className="title__line tone-black">We Are All</span>
+          <span className="title__line tone-red">John Henry</span>
         </h1>
         <p className="lede">
-          Upload a MIDI file or choose a sample, then generate a reactive response
-          for the cello, trombone, drum set, percussion, and robot counterpart
-          ensemble. The design keeps the typography quiet and the color system
-          close to the score: white space, black text, and sharp red accents.
+          Upload a MIDI file or choose a sample, then generate a reactive response.
         </p>
         {result ? (
           <div className="hero-actions" aria-label="Download generated and input MIDI">
@@ -221,11 +180,27 @@ function App() {
         <form className="panel panel--form" onSubmit={handleSubmit}>
           <div className="panel__head">
             <span>Input</span>
-            <span className="panel__hint">MIDI in, MIDI out</span>
+            <span className="panel__hint">Choose a sample or upload your own</span>
+          </div>
+
+          <div className="form-steps" aria-label="How to use this form">
+            <div className="form-step">
+              <span className="form-step__num">1</span>
+              <span className="form-step__text">Pick a sample or upload a MIDI file.</span>
+            </div>
+            <div className="form-step">
+              <span className="form-step__num">2</span>
+              <span className="form-step__text">Set the output file name if you want.</span>
+            </div>
+            <div className="form-step">
+              <span className="form-step__num">3</span>
+              <span className="form-step__text">Generate the response and download both files.</span>
+            </div>
           </div>
 
           <label className="field">
             <span>Upload MIDI</span>
+            <small className="field__help">Optional. Uploaded files override the selected sample.</small>
             <input
               type="file"
               accept=".mid,.midi,audio/midi"
@@ -246,7 +221,12 @@ function App() {
                     onChange={(event) => setSample(event.target.value)}
                   />
                   <div className="sample-card__body">
-                    <strong>{item.name}</strong>
+                    <div className="sample-card__title-row">
+                      <strong>{item.name}</strong>
+                      <span className="sample-card__count">
+                        {item.instrument_count === 1 ? 'Single' : `${item.instrument_count} parts`}
+                      </span>
+                    </div>
                     <span>{item.description}</span>
                     <small>{item.file}</small>
                   </div>
@@ -268,14 +248,10 @@ function App() {
             {loading ? 'Generating...' : 'Generate response'}
           </button>
 
-          <div className="chips">
-            <span className="chip">fastapi</span>
-            <span className="chip">vite</span>
-            <span className="chip">react</span>
-          </div>
         </form>
 
         <section className="summary">
+          {result ? <div className="summary__lead">Generated MIDI is ready.</div> : null}
           {error ? <div className="error">{error}</div> : null}
 
           <div className="panel">
@@ -335,7 +311,7 @@ function App() {
             <div className="panel">
               <div className="panel__head">
                 <span>Output</span>
-                <span className="panel__hint">Generated MIDI is ready</span>
+                <span className="panel__hint">{result.output_file}</span>
               </div>
               <div className="output-meta">
                 <div>

@@ -227,20 +227,29 @@ def clamp_pitch(pitch: int, low: int, high: int) -> int:
     return int(np.clip(pitch, low, high))
 
 
-def get_phase_for_bar(bar_index: int, response_bars: int, takeover_bias: float) -> str:
+def phase_sequence_for_mode(mode: str) -> list[str]:
+    phases = ["control", "drift", "conflict", "takeover", "aftermath"]
+    if mode in phases:
+        start = phases.index(mode)
+        return phases[start:] + phases[:start]
+    return phases
+
+
+def get_phase_for_bar(bar_index: int, response_bars: int, takeover_bias: float, mode: str = "control") -> str:
     progress = bar_index / max(1, response_bars - 1)
     control_end = 0.18 + takeover_bias * 0.08
     drift_end = 0.45 + takeover_bias * 0.08
     conflict_end = 0.78 + takeover_bias * 0.07
+    phases = phase_sequence_for_mode(mode)
     if progress < control_end:
-        return "control"
+        return phases[0]
     if progress < drift_end:
-        return "drift"
+        return phases[1]
     if progress < conflict_end:
-        return "conflict"
+        return phases[2]
     if progress < 0.95:
-        return "takeover"
-    return "aftermath"
+        return phases[3]
+    return phases[4]
 
 
 def family_cycle(family: str) -> list[int]:
@@ -255,6 +264,106 @@ def family_cycle(family: str) -> list[int]:
 
 def build_voice_specs() -> list[VoiceSpec]:
     return VOICE_SPECS
+
+
+def clone_voice_spec(
+    spec: VoiceSpec,
+    *,
+    name: str | None = None,
+    family: str | None = None,
+    program: int | None = None,
+    is_drum: bool | None = None,
+    pitch_low: int | None = None,
+    pitch_high: int | None = None,
+    pitch_center: int | None = None,
+    human: bool | None = None,
+) -> VoiceSpec:
+    return VoiceSpec(
+        name=name if name is not None else spec.name,
+        family=family if family is not None else spec.family,
+        program=program if program is not None else spec.program,
+        is_drum=is_drum if is_drum is not None else spec.is_drum,
+        pitch_low=pitch_low if pitch_low is not None else spec.pitch_low,
+        pitch_high=pitch_high if pitch_high is not None else spec.pitch_high,
+        pitch_center=pitch_center if pitch_center is not None else spec.pitch_center,
+        human=human if human is not None else spec.human,
+    )
+
+
+def voice_layout_for_mode(mode: str) -> list[VoiceSpec]:
+    specs = {spec.name: spec for spec in build_voice_specs()}
+    if mode == "drift":
+        return [
+            clone_voice_spec(specs["robot_cello"], pitch_low=44, pitch_high=84, pitch_center=66),
+            clone_voice_spec(specs["robot_trombone"], pitch_low=50, pitch_high=88, pitch_center=71),
+            clone_voice_spec(specs["robot_percussion"], pitch_low=52, pitch_high=98),
+            clone_voice_spec(specs["robot_drumset"], pitch_low=35, pitch_high=81),
+        ]
+    if mode == "conflict":
+        return [
+            clone_voice_spec(specs["robot_cello"], pitch_low=38, pitch_high=82, pitch_center=62),
+            clone_voice_spec(specs["robot_trombone"], pitch_low=45, pitch_high=86, pitch_center=70),
+            clone_voice_spec(specs["robot_drumset"], pitch_low=35, pitch_high=81),
+            clone_voice_spec(specs["robot_percussion"], pitch_low=49, pitch_high=96),
+        ]
+    if mode == "takeover":
+        return [
+            clone_voice_spec(specs["robot_cello"], pitch_low=42, pitch_high=84, pitch_center=68),
+            clone_voice_spec(specs["robot_trombone"], pitch_low=48, pitch_high=88, pitch_center=74),
+            clone_voice_spec(specs["robot_drumset"], pitch_low=35, pitch_high=81),
+            clone_voice_spec(specs["robot_percussion"], pitch_low=49, pitch_high=98),
+        ]
+    return [
+        clone_voice_spec(specs["robot_cello"], pitch_low=36, pitch_high=79, pitch_center=60),
+        clone_voice_spec(specs["robot_trombone"], pitch_low=43, pitch_high=84, pitch_center=67),
+        clone_voice_spec(specs["robot_drumset"], pitch_low=35, pitch_high=81),
+        clone_voice_spec(specs["robot_percussion"], pitch_low=47, pitch_high=96),
+    ]
+
+
+def single_response_voice_spec(mode: str, source_instrument: pretty_midi.Instrument, features: dict[str, float | int | str | list[int]]) -> VoiceSpec:
+    specs = {spec.name: spec for spec in build_voice_specs()}
+    avg_pitch = float(features["avg_pitch"])
+    register = str(features["register"])
+    notes_per_bar = float(features["notes_per_bar"])
+    syncopation = float(features["syncopation"])
+
+    if source_instrument.is_drum:
+        if mode == "drift":
+            return clone_voice_spec(specs["robot_percussion"], name="response_percussion", human=False)
+        if mode == "conflict":
+            return clone_voice_spec(specs["robot_drumset"], name="response_robot_drums", human=False)
+        if mode == "takeover":
+            return clone_voice_spec(specs["robot_percussion"], name="response_takeover_percussion", human=False, pitch_low=49, pitch_high=98)
+        return clone_voice_spec(specs["robot_drumset"], name="response_drums", human=False)
+
+    if mode == "control":
+        if avg_pitch < 54:
+            return clone_voice_spec(specs["robot_cello"], name="response_cello", human=False)
+        if avg_pitch < 66:
+            return clone_voice_spec(specs["robot_trombone"], name="response_trombone", human=False)
+        return clone_voice_spec(specs["robot_cello"], name="response_cello", human=False, pitch_low=40, pitch_high=74, pitch_center=56)
+
+    if mode == "drift":
+        if register == "low":
+            return clone_voice_spec(specs["robot_trombone"], name="response_robot_trombone", pitch_low=48, pitch_high=88, pitch_center=72)
+        return clone_voice_spec(specs["robot_cello"], name="response_robot_cello", pitch_low=42, pitch_high=84, pitch_center=66)
+
+    if mode == "conflict":
+        if notes_per_bar > 18 or syncopation > 0.2:
+            return clone_voice_spec(specs["robot_percussion"], name="response_robot_percussion", human=False, pitch_low=49, pitch_high=96)
+        if avg_pitch < 60:
+            return clone_voice_spec(specs["robot_cello"], name="response_robot_cello", pitch_low=38, pitch_high=82, pitch_center=62)
+        return clone_voice_spec(specs["robot_trombone"], name="response_robot_trombone", pitch_low=45, pitch_high=88, pitch_center=70)
+
+    if mode == "takeover":
+        if notes_per_bar > 18:
+            return clone_voice_spec(specs["robot_drumset"], name="response_takeover_drums", human=False, pitch_low=35, pitch_high=81)
+        if avg_pitch < 58:
+            return clone_voice_spec(specs["robot_trombone"], name="response_takeover_trombone", pitch_low=46, pitch_high=90, pitch_center=73)
+        return clone_voice_spec(specs["robot_cello"], name="response_takeover_cello", pitch_low=40, pitch_high=84, pitch_center=67)
+
+    return clone_voice_spec(specs["robot_trombone"], name="response_trombone", human=False)
 
 
 def build_voice_instrument(spec: VoiceSpec) -> pretty_midi.Instrument:
@@ -415,11 +524,12 @@ def build_response(
         human_drive=float(action["human_drive"]),
     )
 
-    instruments = [build_voice_instrument(spec) for spec in build_voice_specs()]
-    instrument_map = {spec.name: instrument for spec, instrument in zip(build_voice_specs(), instruments)}
+    voice_specs = voice_layout_for_mode(state.phase)
+    instruments = [build_voice_instrument(spec) for spec in voice_specs]
+    instrument_map = {spec.name: instrument for spec, instrument in zip(voice_specs, instruments)}
 
     for bar_index in range(state.response_bars):
-        phase = get_phase_for_bar(bar_index, state.response_bars, state.takeover_bias)
+        phase = get_phase_for_bar(bar_index, state.response_bars, state.takeover_bias, state.phase)
         bar_start = current_time + bar_index * bar_len
         if phase == "takeover":
             takeover_bias = min(1.0, state.takeover_bias + 0.15 + bar_index / max(1, state.response_bars - 1) * 0.2)
@@ -428,7 +538,7 @@ def build_response(
         else:
             takeover_bias = min(1.0, state.takeover_bias + bar_index / max(1, state.response_bars - 1) * 0.25)
 
-        for spec in build_voice_specs():
+        for spec in voice_specs:
             note_events = voice_pattern(spec, phase, bar_index, takeover_bias, state.human_dropout_bar, motif)
             instrument = instrument_map[spec.name]
             for pitch, offset, duration, velocity in note_events:
@@ -446,6 +556,112 @@ def build_response(
         instrument.notes.sort(key=lambda note: note.start)
         response.instruments.append(instrument)
 
+    return response
+
+
+def build_single_instrument_response(
+    notes: Iterable[pretty_midi.Note],
+    action: dict[str, int | str],
+    source_instrument: pretty_midi.Instrument,
+    features: dict[str, float | int | str | list[int]],
+    tempo: int = DEFAULT_TEMPO,
+    time_sig: tuple[int, int] = DEFAULT_TIME_SIG,
+    start_time: float = 0.0,
+) -> pretty_midi.PrettyMIDI:
+    note_list = list(notes)
+    response = pretty_midi.PrettyMIDI(initial_tempo=tempo)
+    source_name = source_instrument.name or pretty_midi.program_to_instrument_name(source_instrument.program)
+    response_spec = single_response_voice_spec(str(action["mode"]), source_instrument, features)
+    instrument = pretty_midi.Instrument(
+        program=response_spec.program,
+        is_drum=response_spec.is_drum,
+        name=response_spec.name,
+    )
+
+    recent_notes = sorted(note_list, key=lambda note: note.start)[-8:]
+    motif = [note.pitch for note in recent_notes[-4:]] if recent_notes else []
+    motif = motif if motif else [60, 62, 64, 67]
+    key_root = detect_key(note_list)
+    scale_pc = get_major_scale(key_root)
+
+    pitches = [note.pitch for note in note_list] or [60]
+    pitch_low = response_spec.pitch_low if response_spec.pitch_low else max(0, min(pitches) - 12)
+    pitch_high = response_spec.pitch_high if response_spec.pitch_high else min(127, max(pitches) + 12)
+    if response_spec.is_drum:
+        pitch_low, pitch_high = response_spec.pitch_low, response_spec.pitch_high
+
+    bar_len = seconds_per_bar(tempo, time_sig)
+    step = (60.0 / tempo) / 2
+    current_time = quantize(start_time + int(action["latency_bars"]) * bar_len, step)
+    response_bars = int(action["response_bars"])
+    takeover_bias = float(action["takeover_bias"])
+    human_dropout_bar = int(action["human_dropout_bar"])
+
+    patterns = {
+        "control": [0.0, 2.0],
+        "drift": [0.0, 1.5, 3.0],
+        "conflict": [0.0, 1.0, 2.5, 3.0],
+        "takeover": [0.0, 0.5, 1.0, 1.5],
+        "aftermath": [0.0, 2.0],
+    }
+
+    for bar_index in range(response_bars):
+        phase = get_phase_for_bar(bar_index, response_bars, takeover_bias, str(action["mode"]))
+        if phase == "takeover" and bar_index >= human_dropout_bar:
+            phase = "aftermath"
+
+        bar_start = current_time + bar_index * bar_len
+        offsets = patterns[phase]
+
+        for idx, offset in enumerate(offsets):
+            if response_spec.is_drum:
+                pitch_cycle = [36, 38, 42, 46, 49, 51]
+                pitch = pitch_cycle[(bar_index + idx) % len(pitch_cycle)]
+            else:
+                motif_pitch = motif[(bar_index + idx) % len(motif)]
+                if phase == "control":
+                    pitch = motif_pitch + (2 if idx % 2 else 0)
+                elif phase == "drift":
+                    pitch = motif_pitch + (5 if idx % 2 else 1)
+                elif phase == "conflict":
+                    pitch = motif_pitch + (7 if idx % 2 else 12)
+                elif phase == "takeover":
+                    pitch = motif_pitch + (12 if idx % 2 else 7)
+                else:
+                    pitch = motif_pitch - 5
+                pitch = scale_pitch(pitch, scale_pc)
+                pitch = clamp_pitch(pitch, pitch_low, pitch_high)
+
+            if source_instrument.is_drum:
+                velocity = 64 + int(10 * takeover_bias) + (6 if idx % 2 == 0 else 0)
+                duration = 0.18 if phase != "takeover" else 0.14
+            else:
+                velocity = 68 + int(10 * takeover_bias) + (6 if phase in {"conflict", "takeover"} else 0)
+                if phase == "drift":
+                    velocity -= 2
+                duration = 1.3
+                if phase == "drift":
+                    duration = 1.0
+                elif phase == "conflict":
+                    duration = 0.8
+                elif phase == "takeover":
+                    duration = 0.65
+                elif phase == "aftermath":
+                    duration = 1.4
+
+            start = quantize(bar_start + offset * step, step)
+            end = start + max(duration * step, step * 0.5)
+            instrument.notes.append(
+                pretty_midi.Note(
+                    velocity=int(np.clip(velocity, 40, 120)),
+                    pitch=int(pitch),
+                    start=start,
+                    end=end,
+                )
+            )
+
+    instrument.notes.sort(key=lambda note: note.start)
+    response.instruments.append(instrument)
     return response
 
 
@@ -473,15 +689,26 @@ def generate_response(
     midi, instruments, notes = load_midi(input_path)
     features = extract_features(notes, tempo=tempo, time_sig=time_sig)
     action = decide_action(features)
-    response_midi = build_response(
-        notes,
-        action,
-        source_instrument=instruments[0],
-        features=features,
-        tempo=tempo,
-        time_sig=time_sig,
-        start_time=midi.get_end_time(),
-    )
+    if len(instruments) == 1:
+        response_midi = build_single_instrument_response(
+            notes,
+            action,
+            source_instrument=instruments[0],
+            features=features,
+            tempo=tempo,
+            time_sig=time_sig,
+            start_time=midi.get_end_time(),
+        )
+    else:
+        response_midi = build_response(
+            notes,
+            action,
+            source_instrument=instruments[0],
+            features=features,
+            tempo=tempo,
+            time_sig=time_sig,
+            start_time=midi.get_end_time(),
+        )
 
     combined = pretty_midi.PrettyMIDI(initial_tempo=tempo)
     combined.instruments = midi.instruments + response_midi.instruments
@@ -490,14 +717,21 @@ def generate_response(
 
     response_notes = [note for instrument in response_midi.instruments for note in instrument.notes]
     response_instrument = response_midi.instruments[0]
+    source_name = (
+        "ensemble seed"
+        if len(instruments) > 1
+        else (instruments[0].name or pretty_midi.program_to_instrument_name(instruments[0].program))
+    )
 
     return PlaybackResult(
         input_path=input_path,
         output_path=output_path,
         features=features,
         action=action,
-        source_instrument_name="ensemble seed" if len(instruments) > 1 else pretty_midi.program_to_instrument_name(instruments[0].program),
-        response_instrument_name="multi-instrument ensemble",
+        source_instrument_name=source_name,
+        response_instrument_name=(
+            "multi-instrument ensemble" if len(instruments) > 1 else (response_instrument.name or pretty_midi.program_to_instrument_name(response_instrument.program))
+        ),
         response_note_count=len(response_notes),
         response_pitch_min=min(note.pitch for note in response_notes),
         response_pitch_max=max(note.pitch for note in response_notes),

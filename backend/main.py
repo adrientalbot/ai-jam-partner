@@ -28,51 +28,24 @@ app.add_middleware(
 app.mount("/generated", StaticFiles(directory=OUTPUT_DIR), name="generated")
 app.mount("/inputs", StaticFiles(directory=INPUT_DIR), name="inputs")
 
-SAMPLE_LIBRARY: list[dict[str, str]] = [
+SAMPLE_LIBRARY: list[dict[str, str | int]] = [
     {
         "file": "wrong_ensemble_ensemble_seed.mid",
         "name": "Wrong Ensemble Seed",
         "description": "A compact ensemble opening with a deliberately mismatched texture.",
+        "instrument_count": 4,
+    },
+    {
+        "file": "wrong_ensemble_chamber_seed.mid",
+        "name": "Wrong Ensemble Chamber",
+        "description": "A leaner ensemble variant with the same call-and-response character.",
+        "instrument_count": 4,
     },
     {
         "file": "wrong_ensemble_takeover_seed.mid",
         "name": "Wrong Ensemble Takeover",
-        "description": "A more aggressive cue built around a takeover-style gesture.",
-    },
-    {
-        "file": "mvp_minimalist_input.mid",
-        "name": "Minimalist MVP",
-        "description": "Sparse material with lots of space and clear rhythmic cells.",
-    },
-    {
-        "file": "mvp_minimalist_input_variant.mid",
-        "name": "Minimalist Variant",
-        "description": "Alternate cut of the minimalist MVP with denser phrasing.",
-    },
-    {
-        "file": "in_c_inspired_input.mid",
-        "name": "In C Inspired",
-        "description": "Repetitive modular patterns with a steady forward pulse.",
-    },
-    {
-        "file": "in_c_inspired_input_variant.mid",
-        "name": "In C Variant",
-        "description": "A variation with slightly different harmonic movement and pacing.",
-    },
-    {
-        "file": "max_piano.mid",
-        "name": "Max Piano",
-        "description": "Piano-forward material with broader gestures and register jumps.",
-    },
-    {
-        "file": "mvp_test_input.mid",
-        "name": "MVP Test Input",
-        "description": "Short test fixture for verifying the generation pipeline.",
-    },
-    {
-        "file": "example_01.mid",
-        "name": "Example 01",
-        "description": "General-purpose example clip for quick experimentation.",
+        "description": "Single-line material with a more overt takeover-style contour.",
+        "instrument_count": 1,
     },
 ]
 
@@ -82,7 +55,7 @@ def safe_filename(name: str) -> str:
     return cleaned or "response.mid"
 
 
-def list_samples() -> list[dict[str, str]]:
+def list_samples() -> list[dict[str, str | int]]:
     return [sample for sample in SAMPLE_LIBRARY if (INPUT_DIR / sample["file"]).exists()]
 
 
